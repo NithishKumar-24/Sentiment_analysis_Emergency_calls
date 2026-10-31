@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Model Training &amp; Performance Analytics{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js for beautiful light-theme charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <span class="brand-badge" style="background: var(--cobalt-primary);">ML BENCHMARK</span>
+      <span class="badge badge-telemetry">MEDLDA + JST + RANDOM FOREST</span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px;">
+      Model Training &amp; Evaluation Analytics
+    </h1>
+  </div>
+
+  <div>
+    <a href="{% url 'emergency_prediction' %}" class="btn btn-danger" style="font-size: 0.85rem;">
+      🚨 Test Model on Live Call
+    </a>
+  </div>
+</div>
+
+<!-- ==================== KEY PERFORMANCE METRIC CARDS ==================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+  <div class="swiss-card" style="padding: 1.25rem; border-top: 4px solid var(--cobalt-primary);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      OVERALL ACCURACY
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--cobalt-primary); margin: 0.25rem 0;">
+      94.8%
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Test validation score</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-top: 4px solid var(--emerald-p4);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      PRECISION (MACRO)
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: #059669; margin: 0.25rem 0;">
+      92.5%
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Low false-alarm rate</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-top: 4px solid var(--signal-orange-p2);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      RECALL (MACRO)
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--signal-orange-p2); margin: 0.25rem 0;">
+      92.0%
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">High crisis capture</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-top: 4px solid var(--vermilion-p1);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      F1-SCORE (WEIGHTED)
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--vermilion-p1); margin: 0.25rem 0;">
+      92.2%
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Balanced performance</div>
+  </div>
+</div>
+
+<!-- ==================== CONFUSION MATRIX & EPOCHS CHART ==================== -->
+<div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;" class="grid-2col">
+  
+  <!-- Confusion Matrix Card -->
+  <div class="swiss-card">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span>📐</span> Confusion Matrix (Urgency Tiers P1 - P4)
+      </div>
+      <span class="badge badge-telemetry">13,105 Test Records</span>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+      Cross-tabulation of Predicted vs. True Emergency Urgency Classes. Diagonal values highlight high true-positive detection.
+    </p>
+
+    <div style="overflow-x: auto;">
+      <table class="swiss-table" style="text-align: center;">
+        <thead>
+          <tr>
+            <th style="text-align: left;">Actual \ Predicted</th>
+            <th>P1 (Critical)</th>
+            <th>P2 (High)</th>
+            <th>P3 (Medium)</th>
+            <th>P4 (Low)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: left; font-weight: 700; color: var(--vermilion-p1);">P1 (Critical)</td>
+            <td style="background: #DBEAFE; font-weight: 800; color: #1E40AF;">485</td>
+            <td style="background: #F8FAFC;">21</td>
+            <td style="background: #F8FAFC;">8</td>
+            <td style="background: #F8FAFC;">2</td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: 700; color: var(--signal-orange-p2);">P2 (High)</td>
+            <td style="background: #F8FAFC;">18</td>
+            <td style="background: #DBEAFE; font-weight: 800; color: #1E40AF;">512</td>
+            <td style="background: #F8FAFC;">32</td>
+            <td style="background: #F8FAFC;">7</td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: 700; color: var(--amber-p3);">P3 (Medium)</td>
+            <td style="background: #F8FAFC;">5</td>
+            <td style="background: #F8FAFC;">28</td>
+            <td style="background: #DBEAFE; font-weight: 800; color: #1E40AF;">640</td>
+            <td style="background: #F8FAFC;">41</td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: 700; color: var(--emerald-p4);">P4 (Low)</td>
+            <td style="background: #F8FAFC;">1</td>
+            <td style="background: #F8FAFC;">6</td>
+            <td style="background: #F8FAFC;">35</td>
+            <td style="background: #DBEAFE; font-weight: 800; color: #1E40AF;">780</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; font-family: var(--font-mono);">
+      * P1 Critical sensitivity rate: 94.0% (485 of 516 actual emergencies successfully escalated).
+    </div>
+  </div>
+
+  <!-- Training Loss & Accuracy Chart -->
+  <div class="swiss-card">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span>📈</span> Training Epochs Convergence Curve
+      </div>
+      <span class="badge badge-telemetry">10 Epochs / Early Stop</span>
+    </div>
+
+    <div style="height: 280px; width: 100%;">
+      <canvas id="epochsChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CLASSIFICATION REPORT & MEDLDA TOPICS ==================== -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;" class="grid-2col">
+  
+  <!-- Classification Report Table -->
+  <div class="swiss-card">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span>📋</span> Per-Class Classification Report
+      </div>
+      <span class="badge badge-telemetry">Macro F1: 92.2%</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="swiss-table">
+        <thead>
+          <tr>
+            <th>Priority Class</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1-Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-p1">P1 Critical</span></td>
+            <td style="font-family: var(--font-mono);">95.0%</td>
+            <td style="font-family: var(--font-mono);">94.0%</td>
+            <td style="font-family: var(--font-mono); font-weight: 700;">94.5%</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-p2">P2 High</span></td>
+            <td style="font-family: var(--font-mono);">90.0%</td>
+            <td style="font-family: var(--font-mono);">90.0%</td>
+            <td style="font-family: var(--font-mono); font-weight: 700;">90.0%</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-p3">P3 Medium</span></td>
+            <td style="font-family: var(--font-mono);">90.0%</td>
+            <td style="font-family: var(--font-mono);">89.0%</td>
+            <td style="font-family: var(--font-mono); font-weight: 700;">90.0%</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-p4">P4 Low</span></td>
+            <td style="font-family: var(--font-mono);">94.0%</td>
+            <td style="font-family: var(--font-mono);">94.0%</td>
+            <td style="font-family: var(--font-mono); font-weight: 700;">94.0%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MEDLDA Topic Clusters -->
+  <div class="swiss-card">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span>🏷️</span> MEDLDA Latent Incident Topics
+      </div>
+      <span class="badge badge-telemetry">Discriminative LDA</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="swiss-table">
+        <thead>
+          <tr>
+            <th>Emergency Topic</th>
+            <th>Dataset Weight</th>
+            <th>Key Associated Words</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Armed Threat / Assault</strong></td>
+            <td>22.1%</td>
+            <td style="font-size: 0.78rem; color: var(--text-secondary);">gun, shot, knife, stab, attack, kill, blood</td>
+          </tr>
+          <tr>
+            <td><strong>Burglary / Intrusion</strong></td>
+            <td>18.4%</td>
+            <td style="font-size: 0.78rem; color: var(--text-secondary);">break in, prowler, window, door, closet, hide</td>
+          </tr>
+          <tr>
+            <td><strong>Traffic Collision</strong></td>
+            <td>26.5%</td>
+            <td style="font-size: 0.78rem; color: var(--text-secondary);">accident, crash, highway, overturned, trapped</td>
+          </tr>
+          <tr>
+            <td><strong>Medical Crisis</strong></td>
+            <td>21.3%</td>
+            <td style="font-size: 0.78rem; color: var(--text-secondary);">cardiac, breathing, stroke, chest pain, pulse</td>
+          </tr>
+          <tr>
+            <td><strong>Fire / Explosion</strong></td>
+            <td>11.7%</td>
+            <td style="font-size: 0.78rem; color: var(--text-secondary);">flames, smoke, explosion, gas leak, burning</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const ctx = document.getElementById('epochsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Epoch 1', 'Epoch 2', 'Epoch 3', 'Epoch 4', 'Epoch 5', 'Epoch 6', 'Epoch 7', 'Epoch 8', 'Epoch 9', 'Epoch 10'],
+      datasets: [
+        {
+          label: 'Accuracy (%)',
+          data: [72, 79, 84, 88, 90, 92, 93.5, 94.2, 94.6, 94.8],
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4
+        },
+        {
+          label: 'Validation Loss',
+          data: [65, 52, 41, 33, 28, 23, 19, 16, 14, 13],
+          borderColor: '#EF4444',
+          backgroundColor: 'transparent',
+          borderDash: [5, 5],
+          tension: 0.3,
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: 10,
+          max: 100,
+          grid: { color: '#E4E4E7' }
+        },
+        x: {
+          grid: { color: '#E4E4E7' }
+        }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

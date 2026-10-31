@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Emergency Call Triage &amp; Prediction Portal{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <span class="brand-badge" style="background: var(--vermilion-p1);">AI EMERGENCY TRIAGE</span>
+      <span class="badge badge-telemetry">MEDLDA + JST REAL-TIME ENGINE</span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px;">
+      Emergency Incident Prediction Portal
+    </h1>
+  </div>
+
+  <div>
+    <a href="{% url 'model_training' %}" class="btn btn-outline" style="font-size: 0.85rem;">
+      📊 View Model Metrics
+    </a>
+  </div>
+</div>
+
+<!-- ==================== QUICK TEST PRESET BUTTONS ==================== -->
+<div class="swiss-card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; background: var(--bg-surface-subtle);">
+  <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.5rem;">
+    <span>⚡</span> 1-Click Realistic Emergency Presets (Instant Demo):
+  </div>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <button type="button" onclick="applyEmergencyPreset('burglary')" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+      🚨 Burglary Intruder (Panic - P1)
+    </button>
+    <button type="button" onclick="applyEmergencyPreset('accident')" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+      🚗 Highway Crash &amp; Bleeding (P1)
+    </button>
+    <button type="button" onclick="applyEmergencyPreset('telugu')" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; border-color: #93C5FD; color: #1E40AF;">
+      తెలుగు Telugu Break-in (P1)
+    </button>
+    <button type="button" onclick="applyEmergencyPreset('hindi')" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; border-color: #FDBA74; color: #9A3412;">
+      हिन्दी Hindi Severe Crash (P1)
+    </button>
+    <button type="button" onclick="applyEmergencyPreset('routine')" class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+      🔊 Loud Music Disturbance (P4)
+    </button>
+  </div>
+</div>
+
+<!-- ==================== MAIN 2-COLUMN GRID ==================== -->
+<div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; align-items: flex-start;" class="grid-2col">
+  
+  <!-- LEFT COLUMN: INPUT FORM -->
+  <div class="swiss-card" style="border-top: 4px solid var(--text-primary);">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span>📍</span> Incident Location &amp; Call Stream
+      </div>
+      <span class="badge badge-telemetry">Step 1: Input Call</span>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" action="{% url 'emergency_prediction' %}">
+      {% csrf_token %}
+
+      <!-- 1. LOCATION WITH 1-CLICK GPS BUTTON -->
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <label class="form-label" for="id_location" style="margin-bottom: 0;">Incident Location</label>
+          <button type="button" onclick="fetchCurrentGPS('id_location', 'id_lat', 'id_lng', 'gps-status-msg')" class="btn btn-gps" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;">
+            🛰️ GET CURRENT GPS LOCATION
+          </button>
+        </div>
+        <input type="text" name="location" id="id_location" class="form-control" required placeholder="Type civic address or click 'GET CURRENT GPS LOCATION'">
+        <input type="hidden" name="latitude" id="id_lat" value="40.12118">
+        <input type="hidden" name="longitude" id="id_lng" value="-75.35197">
+        <div id="gps-status-msg" style="font-size: 0.75rem; margin-top: 0.35rem; font-family: var(--font-mono);"></div>
+      </div>
+
+      <!-- 2. LANGUAGE SELECTOR -->
+      <div class="form-group">
+        <label class="form-label" for="id_language">Caller Language (Automatic Translation Engine)</label>
+        <select name="language" id="id_language" class="form-control">
+          <option value="English">English (United States / Global)</option>
+          <option value="Telugu">తెలుగు (Telugu - India)</option>
+          <option value="Hindi">हिन्दी (Hindi - India)</option>
+        </select>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">
+          * Speech in Telugu or Hindi is automatically translated into English for the triage model.
+        </span>
+      </div>
+
+      <!-- 3. INPUT MODE TABS -->
+      <div class="form-group">
+        <label class="form-label">Choose Call Transmission Mode</label>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <button type="button" onclick="setMode('text')" id="tab-text" class="btn btn-primary" style="flex: 1 1 120px; font-size: 0.8rem; padding: 0.45rem;">
+            ⌨️ Text Transcript
+          </button>
+          <button type="button" onclick="setMode('mic')" id="tab-mic" class="btn btn-outline" style="flex: 1 1 120px; font-size: 0.8rem; padding: 0.45rem;">
+            🎙️ Live Microphone
+          </button>
+          <button type="button" onclick="setMode('file')" id="tab-file" class="btn btn-outline" style="flex: 1 1 120px; font-size: 0.8rem; padding: 0.45rem;">
+            📁 Upload Audio (.wav)
+          </button>
+        </div>
+        <input type="hidden" name="input_mode" id="id_input_mode" value="text">
+      </div>
+
+      <!-- Live Microphone Controls (Hidden by default) -->
+      <div id="mic-container" style="display: none; background: var(--bg-surface-subtle); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <span style="font-weight: 700; font-size: 0.85rem;">Live Audio Capture:</span>
+          <button type="button" id="mic-record-btn" onclick="initSpeechRecognition('id_call_text', 'id_language', 'mic-record-btn', 'waveform-box-el')" class="btn btn-danger" style="font-size: 0.78rem; padding: 0.35rem 0.85rem;">
+            🎙️ Start Live Mic Recording
+          </button>
+        </div>
+
+        <!-- Animated Waveform -->
+        <div id="waveform-box-el" class="waveform-box" style="display: none;">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <span style="color: #FFF; font-family: var(--font-mono); font-size: 0.75rem; margin-left: 0.5rem;">LISTENING &bull; SPEAK CLEARLY</span>
+        </div>
+      </div>
+
+      <!-- Audio File Upload Input (Hidden by default) -->
+      <div id="file-container" style="display: none; background: var(--bg-surface-subtle); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        <label class="form-label" for="id_audio_file">Upload Emergency Call Audio (.wav / .mp3)</label>
+        <input type="file" name="audio_file" id="id_audio_file" class="form-control" accept="audio/*">
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
+          * Acoustic stress features (loudness, pitch jitter) will be extracted automatically.
+        </span>
+      </div>
+
+      <!-- 4. TEXT DIALOGUE AREA -->
+      <div class="form-group">
+        <label class="form-label" for="id_call_text">Emergency Call Dialogue / Transcript</label>
+        <textarea name="call_text" id="id_call_text" rows="4" class="form-control" placeholder="Describe emergency, what happened, injuries, or speak into mic..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-danger" style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 800; letter-spacing: 0.5px;">
+        🚨 EXECUTE AI EMERGENCY TRIAGE &rarr;
+      </button>
+    </form>
+  </div>
+
+  <!-- RIGHT COLUMN: REAL-TIME PREDICTION RESULTS -->
+  <div>
+    {% if prediction %}
+      <div class="swiss-card" style="border-top: 5px solid {{ prediction.analysis.color_theme }}; box-shadow: var(--shadow-alarm);">
+        <div class="card-header-row">
+          <div class="card-title">
+            <span>🎯</span> AI Triage Assessment Results
+          </div>
+          <span class="badge {{ prediction.analysis.priority_code|lower }}">
+            {{ prediction.analysis.priority_code }}
+          </span>
+        </div>
+
+        <!-- PRIORITY BADGE BANNER -->
+        <div style="background: {% if prediction.is_critical %}var(--vermilion-p1-bg){% else %}var(--emerald-bg){% endif %}; border: 1px solid {% if prediction.is_critical %}var(--vermilion-p1-border){% else %}var(--emerald-border){% endif %}; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; text-align: center;">
+          <div style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+            Calculated Urgency Level
+          </div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: {{ prediction.analysis.color_theme }};">
+            {{ prediction.analysis.priority_label }}
+          </div>
+          {% if prediction.is_critical %}
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--vermilion-p1); margin-top: 0.35rem;">
+              ⚡ IMMEDIATE HIGH-PRIORITY ALERT RELAYED TO POLICE DISPATCH DASHBOARD
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- RADIAL DISTRESS GAUGE & EMOTION -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; background: var(--bg-surface-subtle); border-radius: 8px; padding: 1rem; align-items: center;">
+          <div class="distress-gauge-container">
+            <div class="gauge-percent" style="color: {{ prediction.analysis.color_theme }};">
+              {{ prediction.analysis.distress_percent }}%
+            </div>
+            <div class="gauge-label">Caller Distress Index</div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+              Psychological Emotion:
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 0.2rem;">
+              {{ prediction.analysis.emotion_label }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.3rem;">
+              Modeled via JST Affective Cues
+            </div>
+          </div>
+        </div>
+
+        <!-- TOPIC & DETAILS LIST -->
+        <div style="font-size: 0.88rem; line-height: 1.8;">
+          <div>
+            <strong>Incident Topic (MEDLDA):</strong> 
+            <span style="font-weight: 700; color: var(--text-primary);">{{ prediction.analysis.topic }}</span>
+          </div>
+          <div>
+            <strong>Reported Location:</strong> 
+            <span>{{ prediction.location }}</span>
+          </div>
+          <div>
+            <strong>GPS Geofence:</strong> 
+            <code style="font-family: var(--font-mono); font-size: 0.8rem;">{{ prediction.coordinates }}</code>
+          </div>
+          <div>
+            <strong>Language Processed:</strong> 
+            <span>{{ prediction.detected_language }}</span>
+          </div>
+          {% if prediction.translated_text %}
+            <div style="background: #FFF; border: 1px dashed #93C5FD; border-radius: 6px; padding: 0.5rem 0.75rem; margin-top: 0.5rem; font-size: 0.82rem; color: #1E40AF;">
+              <strong>Auto-Translated to English:</strong><br>
+              <em>"{{ prediction.translated_text }}"</em>
+            </div>
+          {% endif %}
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-grid); display: flex; gap: 0.75rem;">
+          <a href="{% url 'police_dashboard' %}" class="btn btn-dark" style="flex: 1; font-size: 0.85rem;">
+            👮 View in Police Dashboard &rarr;
+          </a>
+          <a href="{% url 'emergency_prediction' %}" class="btn btn-outline" style="font-size: 0.85rem;">
+            New Call
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <!-- Empty State Guide -->
+      <div class="swiss-card" style="text-align: center; padding: 3rem 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">📡</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Awaiting Emergency Input</h3>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 320px; margin: 0 auto 1.5rem auto;">
+          Enter your location, speak into the mic, or use one of the 1-click presets above to test instant AI categorization and priority triaging.
+        </p>
+        <span class="badge badge-telemetry">MEDLDA Topic &bull; JST Distress &bull; P1-P4 Urgency</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function setMode(mode) {
+  document.getElementById('id_input_mode').value = mode;
+  const tabText = document.getElementById('tab-text');
+  const tabMic = document.getElementById('tab-mic');
+  const tabFile = document.getElementById('tab-file');
+
+  const micBox = document.getElementById('mic-container');
+  const fileBox = document.getElementById('file-container');
+
+  // Reset styles
+  tabText.className = 'btn btn-outline';
+  tabMic.className = 'btn btn-outline';
+  tabFile.className = 'btn btn-outline';
+
+  micBox.style.display = 'none';
+  fileBox.style.display = 'none';
+
+  if (mode === 'text') {
+    tabText.className = 'btn btn-primary';
+  } else if (mode === 'mic') {
+    tabMic.className = 'btn btn-primary';
+    micBox.style.display = 'block';
+  } else if (mode === 'file') {
+    tabFile.className = 'btn btn-primary';
+    fileBox.style.display = 'block';
+  }
+}
+</script>
+{% endblock %}

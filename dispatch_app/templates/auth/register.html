@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register User Account | Emergency Dispatch AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 2rem auto;">
+  <div class="swiss-card" style="border-top: 4px solid var(--cobalt-primary);">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <span class="brand-badge" style="background: var(--cobalt-primary); margin-bottom: 0.5rem; display: inline-block;">
+        NEW REGISTRATION
+      </span>
+      <h2 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px;">Register Citizen Account</h2>
+      <p style="font-size: 0.88rem; color: var(--text-secondary);">
+        Register to submit emergency reports and access automated dispatch support
+      </p>
+    </div>
+
+    <form method="POST" action="{% url 'register' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="id_username">Username</label>
+        <input type="text" name="username" id="id_username" class="form-control" required placeholder="Choose a username">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_email">Email Address</label>
+        <input type="email" name="email" id="id_email" class="form-control" required placeholder="name@domain.com">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;" class="grid-2col">
+        <div class="form-group">
+          <label class="form-label" for="id_phone">Contact Phone</label>
+          <input type="text" name="phone" id="id_phone" class="form-control" placeholder="+1-555-0100">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="id_contact">Emergency Contact</label>
+          <input type="text" name="emergency_contact" id="id_contact" class="form-control" placeholder="+1-555-0101">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_password">Password</label>
+        <input type="password" name="password" id="id_password" class="form-control" required placeholder="Create a secure password">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem;">
+        Complete Registration &rarr;
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-grid); font-size: 0.85rem; color: var(--text-secondary);">
+      Already have an account? <a href="{% url 'login' %}" style="color: var(--cobalt-primary); font-weight: 700; text-decoration: none;">Sign In here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

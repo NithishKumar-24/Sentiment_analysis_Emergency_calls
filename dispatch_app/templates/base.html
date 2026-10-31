@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Emergency Triage & Police Dispatch System{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <!-- Leaflet GIS Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="swiss-grid-pattern">
+
+  <!-- ==================== SWISS NAVIGATION BAR ==================== -->
+  <nav class="swiss-nav">
+    <div class="nav-container">
+      <a href="{% url 'landing_home' %}" class="nav-brand">
+        <span class="brand-badge">911 CAD</span>
+        <span class="brand-title">EMERGENCY<span>DISPATCH</span>.AI</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="{% url 'landing_home' %}" class="nav-link">Home</a>
+        
+        {% if user.is_authenticated %}
+          {% if user.is_superuser or user.profile.is_police_admin %}
+            <a href="{% url 'police_dashboard' %}" class="nav-link" style="color:var(--vermilion-p1); font-weight:700;">
+              🚨 Police Command Center
+            </a>
+            <a href="{% url 'model_training' %}" class="nav-link">Model Analytics</a>
+            <span class="badge" style="background:var(--vermilion-p1-bg); color:var(--vermilion-p1); border:1px solid var(--vermilion-p1-border);">👮 Officer: {{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="nav-link" style="color:#DC2626;">Sign Out</a>
+          {% else %}
+            <a href="{% url 'emergency_prediction' %}" class="nav-link btn-nav-red">
+              🚨 Report Emergency
+            </a>
+            <a href="{% url 'user_dashboard' %}" class="nav-link">My Dashboard</a>
+            <a href="{% url 'model_training' %}" class="nav-link">Model Analytics</a>
+            <span class="badge badge-telemetry">Citizen: {{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="nav-link" style="color:#DC2626;">Sign Out</a>
+          {% endif %}
+        {% else %}
+          <a href="{% url 'login' %}" class="nav-link">Sign In</a>
+          <a href="{% url 'register' %}" class="nav-link btn-nav-primary">Create Account</a>
+          <a href="{% url 'login' %}" class="nav-link" style="color:var(--vermilion-p1); font-weight:700;">
+            👮 Police Admin (admin/admin)
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== MESSAGES & NOTIFICATIONS ==================== -->
+  <div class="main-wrapper" style="padding-bottom: 0;">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert-box alert-{{ message.tags }}">
+          <span>{{ message }}</span>
+          <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; cursor:pointer; font-weight:700;">✕</button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- ==================== MAIN CONTENT BLOCK ==================== -->
+  <main class="main-wrapper">
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- ==================== SWISS FOOTER ==================== -->
+  <footer class="swiss-footer">
+    <div class="footer-container">
+      <div>
+        <strong>EMERGENCY DISPATCH AI PLATFORM</strong> &mdash; Swiss Emergency Grid Architecture (MEDLDA + JST + Random Forest).
+      </div>
+      <div>
+        <span class="badge badge-telemetry">STATUS: 100% OPERATIONAL</span>
+        <span class="badge badge-telemetry">LATENCY: &lt; 420ms</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Core Scripts -->
+  <script src="{% static 'js/main.js' %}"></script>
+  <!-- Leaflet GIS Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

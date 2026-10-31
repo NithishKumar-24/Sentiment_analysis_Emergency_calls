@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Portal &amp; Safety Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <span class="brand-badge" style="background: var(--cobalt-primary);">CITIZEN PORTAL</span>
+      <span class="badge badge-telemetry">USER #{{ user.id }}</span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px;">
+      Welcome, {{ user.first_name|default:user.username }}
+    </h1>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{% url 'emergency_prediction' %}" class="btn btn-danger" style="font-size: 0.9rem; padding: 0.65rem 1.25rem;">
+      🚨 Report New Emergency
+    </a>
+    <a href="{% url 'model_training' %}" class="btn btn-outline" style="font-size: 0.9rem;">
+      📊 Model Analytics
+    </a>
+  </div>
+</div>
+
+<!-- ==================== QUICK ACCESS CARDS ==================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+  <div class="swiss-card" style="border-top: 4px solid var(--vermilion-p1);">
+    <div style="font-size: 0.8rem; font-weight: 700; color: var(--vermilion-p1); font-family: var(--font-mono); margin-bottom: 0.25rem;">
+      AI EMERGENCY TRIAGE
+    </div>
+    <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">Report Distress Call</h3>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      Pass your GPS location and emergency details via text, microphone, or audio file in English, Telugu, or Hindi.
+    </p>
+    <a href="{% url 'emergency_prediction' %}" class="btn btn-danger" style="width: 100%; font-size: 0.85rem;">
+      Launch Emergency Triage &rarr;
+    </a>
+  </div>
+
+  <div class="swiss-card" style="border-top: 4px solid var(--cobalt-primary);">
+    <div style="font-size: 0.8rem; font-weight: 700; color: var(--cobalt-primary); font-family: var(--font-mono); margin-bottom: 0.25rem;">
+      AI MODEL ACCURACY
+    </div>
+    <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">Training Analytics</h3>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      View model training performance, confusion matrix chart, and topic classification scores across 911 call records.
+    </p>
+    <a href="{% url 'model_training' %}" class="btn btn-primary" style="width: 100%; font-size: 0.85rem;">
+      View Model Metrics &rarr;
+    </a>
+  </div>
+
+  <div class="swiss-card" style="border-top: 4px solid var(--emerald-p4);">
+    <div style="font-size: 0.8rem; font-weight: 700; color: var(--emerald-p4); font-family: var(--font-mono); margin-bottom: 0.25rem;">
+      ACCOUNT DETAILS
+    </div>
+    <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">Safety Profile</h3>
+    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+      <div><strong>Phone:</strong> {{ user.profile.phone_number|default:"Not specified" }}</div>
+      <div><strong>Emergency Contact:</strong> {{ user.profile.emergency_contact|default:"Not specified" }}</div>
+      <div><strong>Account Status:</strong> <span class="badge badge-p4">Active</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PERSONAL CALL HISTORY ==================== -->
+<div class="swiss-card">
+  <div class="card-header-row">
+    <div class="card-title">
+      <span>📋</span> My Emergency Call History
+    </div>
+    <span class="badge badge-telemetry">Total Reports: {{ total_calls }}</span>
+  </div>
+
+  <div class="table-responsive" style="overflow-x: auto;">
+    <table class="swiss-table">
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Location</th>
+          <th>Category</th>
+          <th>Distress Score</th>
+          <th>Dispatch Status</th>
+          <th>Assigned Unit</th>
+          <th>Date Reported</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in incidents %}
+          <tr>
+            <td>
+              <span class="badge {{ inc.urgency_priority|lower }}">
+                {{ inc.urgency_priority }}
+              </span>
+            </td>
+            <td><strong>{{ inc.location_address }}</strong></td>
+            <td>{{ inc.topic_category }}</td>
+            <td>
+              <span style="font-family: var(--font-mono); font-weight: 700;">
+                {% widthratio inc.distress_score 1 100 %}%
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">({{ inc.emotion_label }})</span>
+            </td>
+            <td>
+              <span class="badge badge-telemetry">{{ inc.status }}</span>
+            </td>
+            <td>
+              {{ inc.dispatched_unit|default:"Pending Route" }}
+            </td>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">
+              {{ inc.created_at|date:"d M Y, h:i A" }} IST
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              You have not submitted any emergency calls yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

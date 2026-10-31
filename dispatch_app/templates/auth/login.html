@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In | Emergency Dispatch AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 2rem auto;">
+  <div class="swiss-card" style="border-top: 4px solid var(--text-primary);">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <span class="brand-badge" style="background: var(--text-primary); margin-bottom: 0.5rem; display: inline-block;">
+        PORTAL ACCESS
+      </span>
+      <h2 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px;">Sign In to CAD System</h2>
+      <p style="font-size: 0.88rem; color: var(--text-secondary);">
+        Access the emergency triage portal or police dispatch dashboard
+      </p>
+    </div>
+
+    <!-- Quick Credentials Hint Box -->
+    <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-grid); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem;">
+      <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">
+        🔑 Role-Based Direct Access:
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+        <span><strong>Police Admin:</strong> <code style="font-family: var(--font-mono); color: var(--vermilion-p1);">admin / admin</code></span>
+        <button type="button" onclick="fillCreds('admin', 'admin')" style="background:none; border:none; color:var(--cobalt-primary); font-weight:700; cursor:pointer;">Use</button>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span><strong>Citizen User:</strong> <code style="font-family: var(--font-mono); color: var(--cobalt-primary);">citizen / citizen123</code></span>
+        <button type="button" onclick="fillCreds('citizen', 'citizen123')" style="background:none; border:none; color:var(--cobalt-primary); font-weight:700; cursor:pointer;">Use</button>
+      </div>
+    </div>
+
+    <form method="POST" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="id_username">Username</label>
+        <input type="text" name="username" id="id_username" class="form-control" required placeholder="e.g. admin or citizen">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="id_password">Password</label>
+        <input type="password" name="password" id="id_password" class="form-control" required placeholder="Enter your password">
+      </div>
+
+      <button type="submit" class="btn btn-dark" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem;">
+        Authenticate &amp; Enter System &rarr;
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-grid); font-size: 0.85rem; color: var(--text-secondary);">
+      Don't have an account? <a href="{% url 'register' %}" style="color: var(--cobalt-primary); font-weight: 700; text-decoration: none;">Register as Citizen User</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function fillCreds(u, p) {
+  document.getElementById('id_username').value = u;
+  document.getElementById('id_password').value = p;
+}
+</script>
+{% endblock %}

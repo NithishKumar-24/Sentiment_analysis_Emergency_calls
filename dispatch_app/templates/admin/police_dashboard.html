@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Police Command Center &amp; Dispatch Admin Panel{% endblock %}
+
+{% block content %}
+<!-- ==================== HEADER ROW ==================== -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <span class="brand-badge" style="background: var(--vermilion-p1);">POLICE COMMAND HQ</span>
+      <span class="badge badge-telemetry">LIVE INCIDENT DISPATCH SYSTEM</span>
+    </div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px;">
+      Central Emergency Dispatch &amp; Admin Panel
+    </h1>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <button onclick="emergencyChime.playSirenAlarm()" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
+      🔊 Test Siren Alert
+    </button>
+    <button onclick="window.location.reload()" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
+      🔄 Refresh CAD Feed
+    </button>
+  </div>
+</div>
+
+<!-- ==================== REAL-TIME CRITICAL ALERT BANNER ==================== -->
+<div id="live-admin-alert-box" class="critical-alert-banner" style="{% if p1_count == 0 %}display: none;{% endif %}">
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <span class="siren-dot"></span>
+    <div>
+      <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--vermilion-p1); letter-spacing: 1px;">
+        ⚠️ REAL-TIME HIGH-SEVERITY EMERGENCY ALERT
+      </div>
+      <div id="live-alert-text" style="font-size: 0.95rem; font-weight: 700; color: #18181B; margin-top: 0.2rem;">
+        Incoming Critical Distress Detected &mdash; Immediate Patrol Routing Required.
+      </div>
+    </div>
+  </div>
+  <a href="#incident-queue-section" class="btn btn-danger" style="font-size: 0.8rem; padding: 0.45rem 1rem;">
+    View &amp; Route Units &darr;
+  </a>
+</div>
+
+<!-- ==================== TELEMETRY METRIC CARDS ==================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+  <div class="swiss-card" style="padding: 1.25rem; border-left: 4px solid var(--vermilion-p1);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      PRIORITY 1 (CRITICAL)
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--vermilion-p1); margin: 0.25rem 0;">
+      {{ p1_count }}
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Life-threatening calls</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-left: 4px solid var(--signal-orange-p2);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      PRIORITY 2 (HIGH)
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--signal-orange-p2); margin: 0.25rem 0;">
+      {{ p2_count }}
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Urgent in-progress crimes</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-left: 4px solid var(--amber-p3);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      PENDING DISPATCH
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: #D97706; margin: 0.25rem 0;">
+      {{ pending_count }}
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">Awaiting officer assignment</div>
+  </div>
+
+  <div class="swiss-card" style="padding: 1.25rem; border-left: 4px solid var(--emerald-p4);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); font-family: var(--font-mono);">
+      TOTAL CALLS LOGGED
+    </div>
+    <div style="font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); margin: 0.25rem 0;">
+      {{ total_count }}
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">In database registry</div>
+  </div>
+</div>
+
+<!-- ==================== LEAFLET GIS INCIDENT MAP ==================== -->
+<div class="swiss-card" style="margin-bottom: 2rem; padding: 1.25rem;">
+  <div class="card-header-row" style="margin-bottom: 1rem;">
+    <div class="card-title">
+      <span>🗺️</span> Interactive CAD Incident GIS Map
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <span class="badge badge-telemetry" style="font-weight: 700; color: #B45309; border-color: #FCD34D; background: #FFFBEB;">
+        ⏳ Total Pending Cases: {{ pending_count }}
+      </span>
+      <span class="badge badge-telemetry">
+        📋 Total Logged: {{ total_count }}
+      </span>
+      <button type="button" onclick="mapFitAll()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;">
+        🎯 Fit All Cases
+      </button>
+      <button type="button" onclick="mapFocusCritical()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; color: var(--vermilion-p1); border-color: var(--vermilion-p1-border); font-weight: 700;">
+        🚨 Focus P1 Cases
+      </button>
+    </div>
+  </div>
+  <div id="police-map" style="height: 420px; width: 100%; border-radius: 8px; border: 1px solid var(--border-grid); background: #F4F4F5;"></div>
+</div>
+
+<!-- ==================== EMERGENCY INCIDENTS QUEUE ==================== -->
+<div id="incident-queue-section" class="swiss-card" style="margin-bottom: 2rem;">
+  <div class="card-header-row">
+    <div class="card-title">
+      <span>🚨</span> Live Emergency Calls Queue &amp; Unit Routing
+    </div>
+    <span class="badge badge-telemetry">Auto-Polling Active (4s)</span>
+  </div>
+
+  <div class="table-responsive" style="overflow-x: auto;">
+    <table class="swiss-table">
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Caller &amp; Phone</th>
+          <th>Incident Location</th>
+          <th>Category (MEDLDA)</th>
+          <th>Distress % (JST)</th>
+          <th>Audio / Transcript</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in incidents %}
+          <tr style="{% if inc.urgency_priority == 'P1' and inc.status == 'PENDING_DISPATCH' %}background: #FFF5F5; font-weight: 600;{% endif %}">
+            <td>
+              <span class="badge {{ inc.urgency_priority|lower }}">
+                {{ inc.urgency_priority }}
+              </span>
+            </td>
+            <td>
+              <strong>{{ inc.caller_name }}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                📞 {{ inc.caller_phone }}
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
+                🕒 {{ inc.created_at|date:"d M Y, h:i A" }} IST
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600;">{{ inc.location_address }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);">
+                GPS: {{ inc.latitude|floatformat:4 }}, {{ inc.longitude|floatformat:4 }}
+              </div>
+            </td>
+            <td>
+              <span style="font-weight: 700; color: #18181B;">{{ inc.topic_category }}</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                Lang: {{ inc.detected_language }}
+              </div>
+            </td>
+            <td>
+              <span style="font-family: var(--font-mono); font-size: 1rem; font-weight: 800; color: {% if inc.distress_score >= 0.75 %}var(--vermilion-p1){% elif inc.distress_score >= 0.5 %}var(--signal-orange-p2){% else %}var(--emerald-p4){% endif %};">
+                {% widthratio inc.distress_score 1 100 %}%
+              </span>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">
+                {{ inc.emotion_label }}
+              </div>
+            </td>
+            <td style="max-width: 260px;">
+              {% if inc.audio_file %}
+                <audio controls style="height: 28px; width: 180px; margin-bottom: 0.3rem;">
+                  <source src="{{ inc.audio_file.url }}" type="audio/mpeg">
+                  Audio playback unsupported.
+                </audio>
+              {% endif %}
+              <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;" title="{{ inc.transcript_text }}">
+                {{ inc.transcript_text|truncatechars:85 }}
+              </div>
+              {% if inc.translated_text %}
+                <div style="font-size: 0.72rem; color: var(--cobalt-primary); margin-top: 0.2rem;">
+                  <em>[Trans]: {{ inc.translated_text|truncatechars:70 }}</em>
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if inc.status == 'PATROL_DISPATCHED' %}
+                <span class="badge" style="background: var(--cobalt-bg); color: var(--cobalt-primary); border: 1px solid #BFDBFE;">
+                  🚓 {{ inc.dispatched_unit|default:"Dispatched" }}
+                </span>
+              {% else %}
+                <span class="badge badge-p1">
+                  ⏳ Pending
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if inc.status == 'PENDING_DISPATCH' %}
+                <form method="POST" action="{% url 'dispatch_patrol' inc.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.35rem 0.7rem;">
+                    🚓 Dispatch Unit
+                  </button>
+                </form>
+              {% else %}
+                <span style="font-size: 0.75rem; color: var(--emerald-p4); font-weight: 700;">
+                  ✓ En Route
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No incidents reported yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== USER MANAGEMENT TAB ==================== -->
+<div class="swiss-card">
+  <div class="card-header-row">
+    <div class="card-title">
+      <span>👥</span> User Account Management (Police Admin Control)
+    </div>
+    <span class="badge badge-telemetry">Active Registered Users: {{ users.count }}</span>
+  </div>
+
+  <div class="table-responsive" style="overflow-x: auto;">
+    <table class="swiss-table">
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Username</th>
+          <th>Email Address</th>
+          <th>Contact Phone</th>
+          <th>Emergency Contact</th>
+          <th>Account Status</th>
+          <th>Admin Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">#USR-{{ u.id }}</td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.82rem;">{{ u.profile.phone_number|default:"N/A" }}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.82rem;">{{ u.profile.emergency_contact|default:"N/A" }}</td>
+            <td>
+              {% if u.profile.is_account_active %}
+                <span class="badge badge-p4">Active</span>
+              {% else %}
+                <span class="badge badge-p1">Deactivated</span>
+              {% endif %}
+            </td>
+            <td style="display: flex; gap: 0.5rem;">
+              <!-- Toggle Active / Deactivate -->
+              <a href="{% url 'toggle_user_status' u.id %}" 
+                 class="btn {% if u.profile.is_account_active %}btn-outline{% else %}btn-primary{% endif %}"
+                 style="font-size: 0.72rem; padding: 0.3rem 0.65rem;">
+                {% if u.profile.is_account_active %}Deactivate{% else %}Activate{% endif %}
+              </a>
+
+              <!-- Delete User -->
+              <a href="{% url 'delete_user' u.id %}" 
+                 onclick="return confirm('Are you sure you want to permanently delete user {{ u.username }}?')"
+                 class="btn btn-danger"
+                 style="font-size: 0.72rem; padding: 0.3rem 0.65rem;">
+                Delete
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No citizen users registered yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let cadMapInstance = null;
+let cadMarkersGroup = null;
+let p1MarkersGroup = null;
+
+function mapFitAll() {
+  if (cadMapInstance && cadMarkersGroup && cadMarkersGroup.getLayers().length > 0) {
+    cadMapInstance.fitBounds(cadMarkersGroup.getBounds().pad(0.15));
+  }
+}
+
+function mapFocusCritical() {
+  if (cadMapInstance && p1MarkersGroup && p1MarkersGroup.getLayers().length > 0) {
+    cadMapInstance.fitBounds(p1MarkersGroup.getBounds().pad(0.2));
+  } else {
+    alert("No active Critical P1 incident cases located on the map.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  // 1. Initialize Leaflet Incident CAD Map
+  cadMapInstance = L.map('police-map', {
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  // Base map tiles (Esri World Street HD default + OpenStreetMap CAD)
+  const esriWorld = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri | CAD Command Center'
+  });
+
+  const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors | 911 CAD Dispatch'
+  });
+
+  esriWorld.addTo(cadMapInstance);
+
+  L.control.layers({
+    "Esri High-Definition": esriWorld,
+    "OpenStreetMap CAD": osmStandard
+  }, null, { position: 'topright' }).addTo(cadMapInstance);
+
+  cadMarkersGroup = L.featureGroup().addTo(cadMapInstance);
+  p1MarkersGroup = L.featureGroup();
+
+  // Safely parse real incident cases from database
+  const incidents = JSON.parse('{{ incidents_json|escapejs }}');
+
+  // Add Incident Markers for each database record
+  incidents.forEach(function(inc) {
+    let marker;
+    if (inc.priority === 'P1') {
+      const p1Icon = L.divIcon({
+        className: '',
+        html: '<div class="pin-beacon-p1" title="Critical Emergency P1">🚨</div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+      marker = L.marker([inc.lat, inc.lng], { icon: p1Icon });
+      p1MarkersGroup.addLayer(marker);
+    } else if (inc.priority === 'P2') {
+      const p2Icon = L.divIcon({
+        className: '',
+        html: '<div class="pin-beacon-p2" title="Urgent Emergency P2">⚠️</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      marker = L.marker([inc.lat, inc.lng], { icon: p2Icon });
+    } else {
+      marker = L.circleMarker([inc.lat, inc.lng], {
+        radius: 8,
+        fillColor: inc.priority === 'P3' ? '#F59E0B' : '#10B981',
+        color: '#FFFFFF',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+      });
+    }
+
+    const priorityBadge = inc.priority === 'P1' ? 'badge-p1' : (inc.priority === 'P2' ? 'badge-p2' : (inc.priority === 'P3' ? 'badge-p3' : 'badge-p4'));
+    const distressColor = inc.distress >= 75 ? 'var(--vermilion-p1)' : (inc.distress >= 50 ? 'var(--signal-orange-p2)' : 'var(--emerald-p4)');
+
+    marker.bindPopup(`
+      <div style="font-family:var(--font-main); min-width:220px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span class="badge ${priorityBadge}" style="font-size:11px;">${inc.priority} CASE</span>
+          <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${inc.created_at || 'CAD'}</span>
+        </div>
+        <strong style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:4px;">${inc.topic}</strong>
+        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">📍 ${inc.location}</div>
+        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">👤 <b>${inc.caller}</b> (📞 ${inc.phone})</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; padding-top:6px; border-top:1px dashed #E4E4E7;">
+          <span style="font-size:11px; font-weight:700;">Distress: <span style="color:${distressColor}; font-family:var(--font-mono);">${inc.distress}% (${inc.emotion})</span></span>
+          <span style="font-size:10px; font-weight:700; color:${inc.status === 'PATROL_DISPATCHED' ? '#059669' : '#DC2626'}">
+            ${inc.status === 'PATROL_DISPATCHED' ? '✓ ' + (inc.dispatched_unit || 'Dispatched') : '⏳ PENDING'}
+          </span>
+        </div>
+      </div>
+    `);
+
+    cadMarkersGroup.addLayer(marker);
+  });
+
+  // Auto-fit bounds to all incident markers
+  if (cadMarkersGroup.getLayers().length > 0) {
+    cadMapInstance.fitBounds(cadMarkersGroup.getBounds().pad(0.15));
+  } else {
+    cadMapInstance.setView([40.12118, -75.35197], 13);
+  }
+
+  // Force Leaflet tile refresh to prevent grey/blank tiles
+  setTimeout(function() {
+    cadMapInstance.invalidateSize();
+  }, 250);
+
+  // 2. Start Live Alert Polling & Audio Siren engine
+  startAdminAlertPolling();
+});
+</script>
+{% endblock %}
